@@ -1,0 +1,9 @@
+spring:
+  docker:
+    compose:
+      host: 172.18.0.1
+      file:
+        - docker/docker-compose.yml
+        - docker/docker-compose-ci.yml
+  datasource:
+    url: "jdbc:postgresql://jme-message-contract-db-local:5432/jme-messagecontract-db-local"

@@ -1,2 +1,15 @@
 server:
   port: 8083
+
+spring:
+  docker:
+    compose:
+      enabled: true
+      file: docker/docker-compose.yml
+      lifecycle-management: start-and-stop
+      readiness:
+        timeout: 120s
+
+messages:
+  repository-cache:
+    directory: "${user.dir}/target/message-type-repository-cache"

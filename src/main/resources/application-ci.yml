@@ -1,0 +1,7 @@
+spring:
+  datasource:
+    url: "jdbc:postgresql://jme-message-contract-db-local:5432/jme-messagecontract-db-local"
+
+messages:
+  repository-cache:
+    directory: "${user.dir}/target/message-type-repository-cache"

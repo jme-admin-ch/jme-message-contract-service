@@ -1,24 +1,34 @@
 publiccodeYmlVersion: 0.4.0
 name: jme-message-contract-service
-applicationSuite: jEAP
-softwareVersion: 0.0.1
-releaseDate: 2026-07-09
-url: "https://github.com/jeap-admin-ch/jme-message-contract-service.git"
-landingURL: "https://github.com/jeap-admin-ch/jeap"
+applicationSuite: JME
+softwareVersion: 1.0.0
+releaseDate: 2026-07-08
+url: "https://github.com/jme-admin-ch/jme-message-contract-service.git"
+landingURL: "https://github.com/jme-admin-ch/jme"
 platforms:
   - web
 categories:
   - application-development
 developmentStatus: stable
-softwareType: library
+softwareType: standalone/backend
+organisation:
+  uri: https://ld.admin.ch/office/V.1.7
+  name: Federal Office of Information Technology, Systems and Telecommunication
 description:
   en:
     localisedName: jme-message-contract-service
-    shortDescription: TODO (Max. 150 characters)
+    shortDescription: Backend service for managing JME message contracts and deployment compatibility checks.
     longDescription: >
-      TODO (Min. 150 characters)
+      jme-message-contract-service is the JME instance of the jEAP Message Contract Service. It provides a
+      Spring Boot backend API for registering producer and consumer message contracts for application versions,
+      storing them in PostgreSQL, recording deployments, and checking whether deployed applications are compatible
+      before or during rollout.
     features:
-      - TODO
+      - Register producer and consumer message contracts per application version
+      - Persist contract and deployment metadata in PostgreSQL
+      - Check compatibility between deployed producers and consumers
+      - Expose REST and Swagger/OpenAPI endpoints for integration and operations
+      - Support RHOS deployment with jEAP monitoring, logging, and database migration configuration
 legal:
   license: Apache-2.0
 maintenance:

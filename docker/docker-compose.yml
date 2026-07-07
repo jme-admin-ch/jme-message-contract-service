@@ -1,12 +1,16 @@
 ---
-version: '3'
 services:
   # Database
   jme-message-contract-db-local:
-    image: postgres:17.7
+    image: postgres:18.4
     ports:
       - "5432:5432"
     environment:
       - POSTGRES_USER=jme-messagecontract
       - POSTGRES_PASSWORD=secret
       - POSTGRES_DB=jme-messagecontract-db-local
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "jme-messagecontract", "-d", "jme-messagecontract-db-local" ]
+      interval: 5s
+      timeout: 5s
+      retries: 12

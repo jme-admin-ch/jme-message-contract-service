@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: jme-message-contract-service
+  autoconfigure:
+    exclude: ch.admin.bit.jeap.messagecontract.web.MessageContractConfig
+  main:
+    banner-mode: off
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: org.postgresql.Driver
+    username: jme-messagecontract
+    password: secret
+    hikari:
+      schema: ${spring.jpa.properties.hibernate.default_schema}
+  flyway:
+    default-schema: ${spring.jpa.properties.hibernate.default_schema}
+  jpa:
+    database: postgresql
+    show-sql: false
+    generate-ddl: false
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        default_schema: data
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  docker:
+    compose:
+      enabled: true
+      file: docker/docker-compose.yml
+      lifecycle-management: start-and-stop
+      skip:
+        in-tests: false
+      arguments:
+        - "--project-name=${COMPOSE_PROJECT_NAME:jme-message-contract-service}"
+      readiness:
+        timeout: 120s

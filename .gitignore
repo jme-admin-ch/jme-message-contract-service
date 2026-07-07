@@ -1,8 +1,6 @@
 # IntelliJ
 *.iml
-.idea/*
-!.idea/runConfigurations
-!.idea/runConfigurations/*.xml
+.idea
 
 # Maven
 target/

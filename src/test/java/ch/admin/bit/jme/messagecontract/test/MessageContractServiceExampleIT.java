@@ -1,5 +1,6 @@
 package ch.admin.bit.jme.messagecontract.test;
 
+import ch.admin.bit.jeap.jme.test.BootServiceSpringIntegrationTestBase;
 import ch.admin.bit.jeap.messagecontract.web.api.dto.CreateMessageContractsDto;
 import ch.admin.bit.jeap.messagecontract.web.api.dto.MessageContractRole;
 import ch.admin.bit.jeap.messagecontract.web.api.dto.NewMessageContractDto;
@@ -9,16 +10,22 @@ import io.restassured.filter.log.ResponseLoggingFilter;
 import io.restassured.http.ContentType;
 import io.restassured.specification.RequestSpecification;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Map;
 
 import static ch.admin.bit.jeap.messagecontract.web.api.dto.CompatibilityMode.BACKWARD;
 import static ch.admin.bit.jeap.messagecontract.web.api.dto.MessageContractRole.CONSUMER;
@@ -29,13 +36,12 @@ import static org.hamcrest.Matchers.hasSize;
 
 @Slf4j
 @TestMethodOrder(OrderAnnotation.class)
-@EnabledIfSystemProperty(named = AfterDeploymentSmoketestIT.DEPLOY_STAGE_PROPERTY_NAME, matches = "d")
-class AfterDeploymentSmoketestIT {
+class MessageContractServiceExampleIT extends BootServiceSpringIntegrationTestBase {
 
-    static final String DEPLOY_STAGE_PROPERTY_NAME = "deployStage";
-    private static final String MASTER = "master";
+    private static final String MAIN = "main";
     private static final String NO_COMMIT_HASH = null;
-    private static final String REPO_URL = "https://bitbucket.bit.admin.ch/scm/bit_jme/jme-message-type-registry.git";
+    private static final String REPO_URL = "https://github.com/jme-admin-ch/jme-message-type-registry.git";
+    private static final String BASE_URL = "http://localhost:8083/message-contract-service/api";
     private static final String MESSAGE_TYPE = "JmeCreateDeclarationCommand";
     private static final String TOPIC_INCOMPATIBLE = "topic-incompatible";
     private static final String TOPIC = "topic";
@@ -45,15 +51,55 @@ class AfterDeploymentSmoketestIT {
 
     private RequestSpecification request;
 
+    @BeforeAll
+    static void startServices() throws Exception {
+        cloneMessageTypeRegistryWithSystemGit();
+        startService(null, "http://localhost:8083/message-contract-service",
+                Map.of("spring.docker.compose.enabled", "false"));
+    }
+
+    private static void cloneMessageTypeRegistryWithSystemGit() throws IOException, InterruptedException {
+        Path cacheDir = Path.of("target", "message-type-repository-cache", sha256(REPO_URL)).normalize();
+        ProcessBuilder processBuilder;
+        if (cacheDir.resolve("config").toFile().exists()) {
+            processBuilder = new ProcessBuilder("git", "-c", "safe.bareRepository=all",
+                    "-C", cacheDir.toString(), "fetch", "--prune", "--tags", "origin");
+        } else {
+            cacheDir.getParent().toFile().mkdirs();
+            processBuilder = new ProcessBuilder("git", "-c", "safe.bareRepository=all",
+                    "clone", "--mirror", REPO_URL, cacheDir.toString());
+        }
+
+        Process process = processBuilder.inheritIO().start();
+        int exitCode = process.waitFor();
+        if (exitCode != 0) {
+            throw new IllegalStateException("Failed to clone or refresh message type registry cache using system git. Exit code: " + exitCode);
+        }
+    }
+
+    private static String sha256(String value) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256 not available", ex);
+        }
+    }
+
     @Order(1)
     @Test
     void putProducerContracts() {
         NewMessageContractDto producerContractV1Dto = new NewMessageContractDto(
                 MESSAGE_TYPE, V1,
-                TOPIC, MessageContractRole.PRODUCER, REPO_URL, NO_COMMIT_HASH, MASTER, BACKWARD, null);
+                TOPIC, MessageContractRole.PRODUCER, REPO_URL, NO_COMMIT_HASH, MAIN, BACKWARD, null);
         NewMessageContractDto producerContractV2Dto = new NewMessageContractDto(
-                MESSAGE_TYPE, V2,
-                TOPIC_INCOMPATIBLE, MessageContractRole.PRODUCER, REPO_URL, NO_COMMIT_HASH, MASTER, BACKWARD, ENCRYPTION_KEY_ID);
+                MESSAGE_TYPE, V2, TOPIC_INCOMPATIBLE, MessageContractRole.PRODUCER,
+                REPO_URL, NO_COMMIT_HASH, MAIN, BACKWARD, ENCRYPTION_KEY_ID);
         CreateMessageContractsDto dto = new CreateMessageContractsDto(List.of(producerContractV1Dto, producerContractV2Dto));
 
         given().spec(request).contentType(ContentType.JSON)
@@ -67,7 +113,7 @@ class AfterDeploymentSmoketestIT {
     void putConsumerContract() {
         NewMessageContractDto consumerContractDto = new NewMessageContractDto(
                 MESSAGE_TYPE, V1,
-                TOPIC, CONSUMER, REPO_URL, NO_COMMIT_HASH, MASTER, BACKWARD, null);
+                TOPIC, CONSUMER, REPO_URL, NO_COMMIT_HASH, MAIN, BACKWARD, null);
         CreateMessageContractsDto dto = new CreateMessageContractsDto(List.of(consumerContractDto));
 
         given().spec(request).contentType(ContentType.JSON)
@@ -82,7 +128,7 @@ class AfterDeploymentSmoketestIT {
         // Producer produces v2 on this topic, consumer tries to consume incompatible v1 on the same topic
         NewMessageContractDto consumerContractDto = new NewMessageContractDto(
                 MESSAGE_TYPE, V1,
-                TOPIC_INCOMPATIBLE, CONSUMER, REPO_URL, NO_COMMIT_HASH, MASTER, BACKWARD, null);
+                TOPIC_INCOMPATIBLE, CONSUMER, REPO_URL, NO_COMMIT_HASH, MAIN, BACKWARD, null);
         CreateMessageContractsDto dto = new CreateMessageContractsDto(List.of(consumerContractDto));
 
         given().spec(request).contentType(ContentType.JSON)
@@ -126,16 +172,13 @@ class AfterDeploymentSmoketestIT {
 
     @BeforeEach
     void setUp() {
-        String deployStage = System.getProperty(DEPLOY_STAGE_PROPERTY_NAME, "d");
-        String baseUri = "https://bit-jme-%s.apps.p-szb-ros-shrd-npr-01.cloud.admin.ch/".formatted(deployStage);
-        RestAssured.useRelaxedHTTPSValidation();
         RestAssured.config.getLogConfig().blacklistHeader(HttpHeaders.AUTHORIZATION, HttpHeaders.SET_COOKIE);
         RestAssured.filters(new ResponseLoggingFilter());
 
         RequestSpecBuilder builder = new RequestSpecBuilder();
-        builder.setBaseUri(baseUri);
-        builder.setBasePath("/message-contract-service/api");
+        builder.setBaseUri(BASE_URL);
         builder.setAuth(preemptive().basic("write", "secret"));
         request = builder.build();
     }
+
 }

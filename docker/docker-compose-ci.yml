@@ -1,0 +1,12 @@
+# CI overlay for docker-compose. The Jenkins job creates this external network
+# and runs Maven inside it so services are reachable by compose service name.
+services:
+  jme-message-contract-db-local:
+    ports: !reset [ ]
+    labels:
+      org.springframework.boot.ignore: true
+
+networks:
+  default:
+    external: true
+    name: ${COMPOSE_PROJECT_NAME}_default

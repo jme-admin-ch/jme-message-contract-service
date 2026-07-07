@@ -3,11 +3,7 @@
     <option name="ACTIVE_PROFILES" value="local" />
     <module name="jme-message-contract-service" />
     <option name="SPRING_BOOT_MAIN_CLASS" value="ch.admin.bit.jeap.messagecontract.web.MessageContractApplication" />
-    <extension name="software.aws.toolkits.jetbrains.core.execution.JavaAwsConnectionExtension">
-      <option name="credential" />
-      <option name="region" />
-      <option name="useCurrentConnection" value="false" />
-    </extension>
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>
