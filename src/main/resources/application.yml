@@ -1,0 +1,46 @@
+# Persistence
+spring:
+  application:
+    name: jme-message-contract-service
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: org.postgresql.Driver
+    url: "jdbc:postgresql://localhost:5432/jme-messagecontract-db-local"
+    username: jme-messagecontract
+    password: secret
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 10
+      leak-detection-threshold: 15000
+      schema: ${spring.jpa.properties.hibernate.default_schema}
+  jpa:
+    properties:
+      hibernate:
+        default_schema: data
+  flyway:
+    # Flyway creates automatically the default schema if it doesn't exist
+    default-schema: ${spring.jpa.properties.hibernate.default_schema}
+server:
+  servlet:
+    context-path: /message-contract-service
+  error:
+    include-message: always
+    include-binding-errors: always
+jeap:
+  monitor:
+    prometheus:
+      password: "{noop}secret"
+  swagger:
+    status: OPEN
+  messagecontract:
+    users:
+      write-users:
+        - username: write
+          password: "{noop}secret"
+# Avoids spring security warnings concerning the configured matcher for this (unused) endpoint
+management:
+  cloudfoundry:
+    enabled: false
+logging:
+  level:
+    ch.admin.bit.jeap.log.RestRequestTracer: TRACE

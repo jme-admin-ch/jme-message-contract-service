@@ -1,0 +1,2 @@
+# Accept the risk because we have at least commons-io 2.16.1 when looking at the Intelij Dependecy Analyzer
+CVE-2024-47554
