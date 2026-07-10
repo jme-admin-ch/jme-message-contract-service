@@ -28,7 +28,6 @@ description:
       - Persist contract and deployment metadata in PostgreSQL
       - Check compatibility between deployed producers and consumers
       - Expose REST and Swagger/OpenAPI endpoints for integration and operations
-      - Support RHOS deployment with jEAP monitoring, logging, and database migration configuration
 legal:
   license: Apache-2.0
 maintenance:
