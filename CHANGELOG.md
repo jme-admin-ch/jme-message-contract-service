@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-07-23
+
+### Dependencies
+- **ch.admin.bit.jeap:jeap-message-contract-service-instance**: 7.5.0 → 8.2.0 (major)
+- **ch.admin.bit.jeap.jme:jme-spring-boot-integration-test**: 5.7.1 → 5.7.2 (patch)
+
 ## [1.5.1] - 2026-07-20
 
 ### Dependencies
