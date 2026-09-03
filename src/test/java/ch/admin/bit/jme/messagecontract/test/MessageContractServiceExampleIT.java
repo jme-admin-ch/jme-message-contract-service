@@ -18,12 +18,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.FileSystemUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -60,21 +63,61 @@ class MessageContractServiceExampleIT extends BootServiceSpringIntegrationTestBa
 
     private static void cloneMessageTypeRegistryWithSystemGit() throws IOException, InterruptedException {
         Path cacheDir = Path.of("target", "message-type-repository-cache", sha256(REPO_URL)).normalize();
-        ProcessBuilder processBuilder;
+        StringBuilder failures = new StringBuilder();
+        for (List<String> proxyArgs : gitProxyArguments()) {
+            String failure = cloneOrFetch(cacheDir, proxyArgs);
+            if (failure == null) {
+                return;
+            }
+            failures.append(failure);
+        }
+        throw new IllegalStateException("Failed to clone or refresh the message type registry cache using system git:\n" + failures);
+    }
+
+    /**
+     * Git configurations to try, in order: first the ambient git configuration, which is what a developer machine
+     * (and any environment with direct internet access) needs, then the corporate proxy. The CI agents reach
+     * github.com through a proxy only, and maven hands that proxy to the test JVM as system properties, which git
+     * does not pick up by itself.
+     */
+    private static List<List<String>> gitProxyArguments() {
+        List<List<String>> arguments = new ArrayList<>();
+        arguments.add(List.of());
+        String proxyHost = System.getProperty("https.proxyHost");
+        if (proxyHost != null && !proxyHost.isBlank()) {
+            String proxyPort = System.getProperty("https.proxyPort", "8080");
+            arguments.add(List.of("-c", "http.proxy=http://" + proxyHost + ":" + proxyPort));
+        }
+        return arguments;
+    }
+
+    /**
+     * @return {@code null} if git succeeded, the git command and its output otherwise
+     */
+    private static String cloneOrFetch(Path cacheDir, List<String> proxyArgs) throws IOException, InterruptedException {
+        List<String> command = new ArrayList<>(List.of("git", "-c", "safe.bareRepository=all"));
+        command.addAll(proxyArgs);
         if (cacheDir.resolve("config").toFile().exists()) {
-            processBuilder = new ProcessBuilder("git", "-c", "safe.bareRepository=all",
-                    "-C", cacheDir.toString(), "fetch", "--prune", "--tags", "origin");
+            command.addAll(List.of("-C", cacheDir.toString(), "fetch", "--prune", "--tags", "origin"));
         } else {
+            // A previous attempt may have left a partial clone behind, which would make git refuse to clone again
+            FileSystemUtils.deleteRecursively(cacheDir);
             cacheDir.getParent().toFile().mkdirs();
-            processBuilder = new ProcessBuilder("git", "-c", "safe.bareRepository=all",
-                    "clone", "--mirror", REPO_URL, cacheDir.toString());
+            command.addAll(List.of("clone", "--mirror", REPO_URL, cacheDir.toString()));
         }
 
-        Process process = processBuilder.inheritIO().start();
-        int exitCode = process.waitFor();
-        if (exitCode != 0) {
-            throw new IllegalStateException("Failed to clone or refresh message type registry cache using system git. Exit code: " + exitCode);
+        log.info("Running {}", String.join(" ", command));
+        Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+        String output;
+        try (InputStream inputStream = process.getInputStream()) {
+            output = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
         }
+        int exitCode = process.waitFor();
+        log.info("{}", output);
+        if (exitCode == 0) {
+            return null;
+        }
+        return String.join(" ", command) + " exited with code " + exitCode + ":\n" + output + "\n";
     }
 
     private static String sha256(String value) {
