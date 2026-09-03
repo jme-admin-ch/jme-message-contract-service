@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,8 @@ class MessageContractServiceExampleIT extends BootServiceSpringIntegrationTestBa
     private static final String V1 = "1.0.0";
     private static final String V2 = "2.0.0";
     private static final String ENCRYPTION_KEY_ID = "messaging-key-id";
+    private static final int CLONE_ATTEMPTS = 3;
+    private static final Duration CLONE_RETRY_DELAY = Duration.ofSeconds(5);
 
     private RequestSpecification request;
 
@@ -61,24 +64,33 @@ class MessageContractServiceExampleIT extends BootServiceSpringIntegrationTestBa
                 Map.of("spring.docker.compose.enabled", "false"));
     }
 
+    /**
+     * Populates the reference repository cache the service reads the message type schemas from. github.com
+     * intermittently answers the anonymous clone from the CI agents with a 401, which makes git ask for a username
+     * and fail, so retry a few times before giving up.
+     */
     private static void cloneMessageTypeRegistryWithSystemGit() throws IOException, InterruptedException {
         Path cacheDir = Path.of("target", "message-type-repository-cache", sha256(REPO_URL)).normalize();
         StringBuilder failures = new StringBuilder();
-        for (List<String> proxyArgs : gitProxyArguments()) {
-            String failure = cloneOrFetch(cacheDir, proxyArgs);
-            if (failure == null) {
-                return;
+        for (int attempt = 1; attempt <= CLONE_ATTEMPTS; attempt++) {
+            if (attempt > 1) {
+                Thread.sleep(CLONE_RETRY_DELAY.toMillis());
             }
-            failures.append(failure);
+            for (List<String> proxyArgs : gitProxyArguments()) {
+                String failure = cloneOrFetch(cacheDir, proxyArgs);
+                if (failure == null) {
+                    return;
+                }
+                failures.append(failure);
+            }
         }
         throw new IllegalStateException("Failed to clone or refresh the message type registry cache using system git:\n" + failures);
     }
 
     /**
      * Git configurations to try, in order: first the ambient git configuration, which is what a developer machine
-     * (and any environment with direct internet access) needs, then the corporate proxy. The CI agents reach
-     * github.com through a proxy only, and maven hands that proxy to the test JVM as system properties, which git
-     * does not pick up by itself.
+     * and the CI agents normally use, then the corporate proxy as an alternative route. Maven hands that proxy to
+     * the test JVM as system properties, which git does not pick up by itself.
      */
     private static List<List<String>> gitProxyArguments() {
         List<List<String>> arguments = new ArrayList<>();
