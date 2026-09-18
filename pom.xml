@@ -14,7 +14,7 @@
     <groupId>ch.admin.bit.jme</groupId>
     <artifactId>jme-message-contract-service</artifactId>
     <name>${project.groupId}:${project.artifactId}</name>
-    <version>6.3.0-SNAPSHOT</version>
+    <version>6.3.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <url>https://github.com/jme-admin-ch/jme-message-contract-service/tree/main</url>
