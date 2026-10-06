@@ -151,10 +151,10 @@ class MessageContractServiceExampleIT extends BootServiceSpringIntegrationTestBa
     void putProducerContracts() {
         NewMessageContractDto producerContractV1Dto = new NewMessageContractDto(
                 MESSAGE_TYPE, V1,
-                TOPIC, MessageContractRole.PRODUCER, REPO_URL, NO_COMMIT_HASH, MAIN, BACKWARD, null);
+                TOPIC, MessageContractRole.PRODUCER, REPO_URL, NO_COMMIT_HASH, MAIN, BACKWARD, null, null);
         NewMessageContractDto producerContractV2Dto = new NewMessageContractDto(
                 MESSAGE_TYPE, V2, TOPIC_INCOMPATIBLE, MessageContractRole.PRODUCER,
-                REPO_URL, NO_COMMIT_HASH, MAIN, BACKWARD, ENCRYPTION_KEY_ID);
+                REPO_URL, NO_COMMIT_HASH, MAIN, BACKWARD, ENCRYPTION_KEY_ID, null);
         CreateMessageContractsDto dto = new CreateMessageContractsDto(List.of(producerContractV1Dto, producerContractV2Dto));
 
         given().spec(request).contentType(ContentType.JSON)
@@ -168,7 +168,7 @@ class MessageContractServiceExampleIT extends BootServiceSpringIntegrationTestBa
     void putConsumerContract() {
         NewMessageContractDto consumerContractDto = new NewMessageContractDto(
                 MESSAGE_TYPE, V1,
-                TOPIC, CONSUMER, REPO_URL, NO_COMMIT_HASH, MAIN, BACKWARD, null);
+                TOPIC, CONSUMER, REPO_URL, NO_COMMIT_HASH, MAIN, BACKWARD, null, null);
         CreateMessageContractsDto dto = new CreateMessageContractsDto(List.of(consumerContractDto));
 
         given().spec(request).contentType(ContentType.JSON)
@@ -183,7 +183,7 @@ class MessageContractServiceExampleIT extends BootServiceSpringIntegrationTestBa
         // Producer produces v2 on this topic, consumer tries to consume incompatible v1 on the same topic
         NewMessageContractDto consumerContractDto = new NewMessageContractDto(
                 MESSAGE_TYPE, V1,
-                TOPIC_INCOMPATIBLE, CONSUMER, REPO_URL, NO_COMMIT_HASH, MAIN, BACKWARD, null);
+                TOPIC_INCOMPATIBLE, CONSUMER, REPO_URL, NO_COMMIT_HASH, MAIN, BACKWARD, null, null);
         CreateMessageContractsDto dto = new CreateMessageContractsDto(List.of(consumerContractDto));
 
         given().spec(request).contentType(ContentType.JSON)
