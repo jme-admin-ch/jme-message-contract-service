@@ -1,8 +1,8 @@
 publiccodeYmlVersion: 0.4.0
 name: jme-message-contract-service
 applicationSuite: JME
-softwareVersion: 8.14.0
-releaseDate: 2026-11-08
+softwareVersion: 8.15.0
+releaseDate: 2026-11-10
 url: "https://github.com/jme-admin-ch/jme-message-contract-service.git"
 landingURL: "https://github.com/jme-admin-ch/jme"
 platforms:
