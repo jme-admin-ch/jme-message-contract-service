@@ -11,10 +11,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
-    <groupId>ch.admin.bit.jme</groupId>
+    <groupId>ch.admin.bit.jeap.jme</groupId>
     <artifactId>jme-message-contract-service</artifactId>
     <name>${project.groupId}:${project.artifactId}</name>
-    <version>8.20.0-SNAPSHOT</version>
+    <version>8.21.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <url>https://github.com/jme-admin-ch/jme-message-contract-service/tree/main</url>
